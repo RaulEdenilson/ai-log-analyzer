@@ -18,6 +18,7 @@ def health():
     REQUESTS.labels("health").inc()
     return {"status": "ok"}
 
+
 @app.post("/upload-log")
 def upload_log(payload: Union[LogRecord, List[LogRecord]]):
     count = len(payload) if isinstance(payload, list) else 1
