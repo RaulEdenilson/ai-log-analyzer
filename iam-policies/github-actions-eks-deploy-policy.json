@@ -5,14 +5,19 @@
             "Effect": "Allow",
             "Action": [
                 "eks:DescribeCluster",
-                "eks:ListClusters"
+                "eks:ListClusters",
+                "eks:DescribeNodegroup",
+                "eks:ListNodegroups",
+                "eks:DescribeUpdate",
+                "eks:ListUpdates"
             ],
             "Resource": "*"
         },
         {
             "Effect": "Allow",
             "Action": [
-                "sts:AssumeRole"
+                "sts:AssumeRole",
+                "sts:GetCallerIdentity"
             ],
             "Resource": "*"
         }

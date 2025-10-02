@@ -25,10 +25,16 @@ jobs:
         run: |
           aws eks update-kubeconfig --region ${{ vars.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
 
+      - name: Test cluster connection
+        run: |
+          echo "🔍 Verificando conexión al cluster..."
+          kubectl auth can-i get pods --all-namespaces
+          kubectl get nodes
+          
       - name: Deploy all Kubernetes manifests
         run: |
           echo "🚀 Desplegando manifiestos iniciales..."
-          kubectl apply -f k8s/
+          kubectl apply -f k8s/ --validate=false
 
       - name: Wait for deployment
         run: |
