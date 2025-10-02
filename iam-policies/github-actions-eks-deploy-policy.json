@@ -9,7 +9,8 @@
                 "eks:DescribeNodegroup",
                 "eks:ListNodegroups",
                 "eks:DescribeUpdate",
-                "eks:ListUpdates"
+                "eks:ListUpdates",
+                "eks:AccessKubernetesApi"
             ],
             "Resource": "*"
         },
@@ -18,6 +19,14 @@
             "Action": [
                 "sts:AssumeRole",
                 "sts:GetCallerIdentity"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "iam:GetRole",
+                "iam:ListAttachedRolePolicies"
             ],
             "Resource": "*"
         }
