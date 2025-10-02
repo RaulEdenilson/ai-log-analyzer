@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-logs-config
+  namespace: ai-logs
+data:
+  ANOMALY_THRESHOLD: "0.7"
+  LATENCY_MS_THRESHOLD: "800"
+  # SQLITE en disco del container (para demo). En EKS prod, usa RDS/otros.
+  SQLITE_URL: "sqlite:///./data/data.db"

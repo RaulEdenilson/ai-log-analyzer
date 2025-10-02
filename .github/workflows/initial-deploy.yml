@@ -1,0 +1,44 @@
+name: initial-deploy-to-eks
+on:
+  workflow_dispatch:  # Solo se ejecuta manualmente
+
+env:
+  ECR_REPOSITORY: ai-log-analyzer
+  EKS_CLUSTER_NAME: ai-logs-eks
+
+jobs:
+  initial-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::625512666928:role/GitHubActions-EKSDeploy
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --region ${{ vars.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
+
+      - name: Deploy all Kubernetes manifests
+        run: |
+          echo "🚀 Desplegando manifiestos iniciales..."
+          kubectl apply -f k8s/
+
+      - name: Wait for deployment
+        run: |
+          echo "⏳ Esperando que el despliegue esté listo..."
+          kubectl wait --for=condition=available --timeout=300s deployment/ai-logs-api -n ai-logs
+
+      - name: Get service info
+        run: |
+          echo "📊 Estado del despliegue:"
+          kubectl get all -n ai-logs
+          echo ""
+          echo "🌐 LoadBalancer URL:"
+          kubectl get svc ai-logs-svc -n ai-logs

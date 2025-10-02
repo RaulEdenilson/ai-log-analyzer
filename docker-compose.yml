@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-log-analyzer
+    ports:
+      - "8000:8000"
+    environment:
+      # Cárgalas desde .env (recomendado) o sobreescríbelas aquí
+      ANOMALY_THRESHOLD: ${ANOMALY_THRESHOLD:-0.7}
+      LATENCY_MS_THRESHOLD: ${LATENCY_MS_THRESHOLD:-800}
+      SQLITE_URL: ${SQLITE_URL:-sqlite:///./data/data.db}
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      # Persistencia del SQLite en el host (./data en tu repo)
+      - ./app:/app/app:ro
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    # Reinicia si se cae
+    restart: unless-stopped

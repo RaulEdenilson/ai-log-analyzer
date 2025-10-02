@@ -1,4 +1,4 @@
-name: ci-build-and-push-ecr
+name: ci-build-push-deploy
 on:
   push:
     branches: [ main ]
@@ -7,13 +7,17 @@ on:
 
 env:
   ECR_REPOSITORY: ai-log-analyzer
+  EKS_CLUSTER_NAME: ai-logs-eks
 
 jobs:
-  docker-build-and-push:
+  build-and-push:
     runs-on: ubuntu-latest
     permissions:
       id-token: write   # requerido para OIDC
       contents: read
+    outputs:
+      image-tag: ${{ steps.image-info.outputs.image-tag }}
+      image-uri: ${{ steps.image-info.outputs.image-uri }}
     steps:
       - uses: actions/checkout@v4
 
@@ -38,3 +42,46 @@ jobs:
           docker tag   $ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push  $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push  $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Set image info
+        id: image-info
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          echo "image-tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "image-uri=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+  deploy-to-eks:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::625512666928:role/GitHubActions-EKSDeploy
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --region ${{ vars.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
+
+      - name: Update deployment image
+        run: |
+          kubectl set image deployment/ai-logs-api api=${{ needs.build-and-push.outputs.image-uri }} -n ai-logs
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/ai-logs-api -n ai-logs --timeout=300s
+
+      - name: Verify deployment
+        run: |
+          kubectl get pods -n ai-logs
+          kubectl get svc -n ai-logs
