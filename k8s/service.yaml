@@ -4,11 +4,11 @@ metadata:
   name: ai-logs-svc
   namespace: ai-logs
   labels: { app: ai-logs-api }
-spec:
-  type: LoadBalancer
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
     service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+spec:
+  type: LoadBalancer
   selector: { app: ai-logs-api }
   ports:
     - name: http
