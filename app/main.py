@@ -83,7 +83,7 @@ def metrics():
 # =====================
 # Anomalías desde DB
 # =====================
-@app.get("/anomalies", response_model=List[schemas.AnomalyOut])
+@app.get("/anomalies")
 def get_anomalies(
     limit: int = Query(20, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -91,28 +91,32 @@ def get_anomalies(
     """
     Lista las últimas N anomalías consultando la base de datos (no memoria).
     """
-    q = (
-        db.query(models.Anomaly, models.LogEntry)
-          .join(models.LogEntry, models.Anomaly.log_id == models.LogEntry.id)
-          .order_by(desc(models.Anomaly.created_at))
-          .limit(limit)
-    )
-    out: list[schemas.AnomalyOut] = []
-    for anom, log in q.all():
-        out.append(
-            schemas.AnomalyOut(
-                id=anom.id,
-                created_at=anom.created_at,
-                score=anom.score,
-                reason=anom.reason,
-                log_id=log.id,
-                level=log.level,
-                message=log.message,
-                latency_ms=log.latency_ms,
-                ts=log.ts,
-            )
-        )
-    return out
+    try:
+        # Verificar si las tablas existen
+        anomalies = db.query(models.Anomaly).limit(limit).all()
+        
+        result = []
+        for anom in anomalies:
+            try:
+                log = db.query(models.LogEntry).filter(models.LogEntry.id == anom.log_id).first()
+                if log:
+                    result.append({
+                        "id": anom.id,
+                        "created_at": anom.created_at.isoformat() if anom.created_at else None,
+                        "score": anom.score,
+                        "reason": anom.reason,
+                        "log_id": log.id,
+                        "level": log.level,
+                        "message": log.message,
+                        "latency_ms": log.latency_ms,
+                        "ts": log.ts.isoformat() if log.ts else None,
+                    })
+            except Exception as e:
+                continue
+        
+        return {"anomalies": result, "count": len(result)}
+    except Exception as e:
+        return {"error": str(e), "anomalies": [], "count": 0}
 
 # =====================
 # (Opcional) Tick IF/ventanas

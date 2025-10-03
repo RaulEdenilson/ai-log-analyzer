@@ -41,26 +41,31 @@ def from_json_payload(payload: dict | list) -> List[schemas.LogIn]:
       - {"items": [...]}
     """
     if isinstance(payload, list):
-        return [schemas.LogIn(**_coerce_log_dict(d)) for d in payload]
+        return [schemas.LogIn(**_coerce_log_dict(d)) for d in payload if isinstance(d, dict)]
     if isinstance(payload, dict):
         if isinstance(payload.get("items"), list):
-            return [schemas.LogIn(**_coerce_log_dict(d)) for d in payload["items"]]
+            return [schemas.LogIn(**_coerce_log_dict(d)) for d in payload["items"] if isinstance(d, dict)]
         return [schemas.LogIn(**_coerce_log_dict(payload))]
     return []
 
 def _coerce_log_dict(d: dict) -> dict:
     """Normaliza alias: ts/timestamp, message/msg, latency_ms/latency."""
+    if not isinstance(d, dict):
+        raise ValueError(f"Expected dict, got {type(d)}")
+    
     ts = d.get("ts") or d.get("timestamp")
     if isinstance(ts, str):
         try:
             ts = datetime.fromisoformat(ts.replace("Z", "+00:00"))
         except Exception:
             ts = None
+    
     return {
         "ts": ts,
-        "level": d.get("level", "INFO"),
+        "level": str(d.get("level", "INFO")).upper(),
         "message": str(d.get("message", d.get("msg", ""))),
         "latency_ms": int(d.get("latency_ms", d.get("latency", 0)) or 0),
+        "source": str(d.get("source", "unknown")),
     }
 
 # -------- Archivos (.jsonl / .log) --------
