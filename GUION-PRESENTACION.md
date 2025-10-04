@@ -97,10 +97,11 @@ curl http://a709cebde35644ceca5557ed71f2f964-3a7026267f48c6dd.elb.us-east-1.amaz
 3. Deploy automático a EKS
 4. Health checks y verificación
 
-### **Mostrar GitHub Actions**
-- Abrir repositorio en GitHub
+### **Mostrar Arquitectura de Repositorios**
+- **Repositorio de Código**: https://github.com/RaulEdenilson/ai-log-analyzer
+- **Repositorio de Infraestructura**: https://github.com/RaulEdenilson/ai-log-analyzer-infra
 - Mostrar workflow en Actions
-- Explicar el pipeline
+- Explicar la separación de responsabilidades
 
 ---
 
@@ -137,6 +138,9 @@ curl http://a709cebde35644ceca5557ed71f2f964-3a7026267f48c6dd.elb.us-east-1.amaz
 
 ### **P: ¿Cómo manejas la persistencia de datos?**
 > **R**: "Actualmente uso SQLite para la demo, pero la arquitectura permite fácilmente cambiar a PostgreSQL o cualquier base de datos empresarial usando ConfigMaps."
+
+### **P: ¿Cómo organizas la infraestructura?**
+> **R**: "Sigo mejores prácticas separando infraestructura y código en repositorios diferentes. El repo de infraestructura maneja EKS, VPC, y recursos de AWS, mientras que el de aplicación se enfoca en el código y deployments de Kubernetes."
 
 ### **P: ¿Qué pasa si un pod falla?**
 > **R**: "Kubernetes automáticamente reinicia pods fallidos. Tengo 2 réplicas para alta disponibilidad y health checks configurados."

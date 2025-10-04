@@ -9,6 +9,10 @@ $API_URL = "http://a709cebde35644ceca5557ed71f2f964-3a7026267f48c6dd.elb.us-east
 $GRAFANA_URL = "http://a5fa4f7534daa4dd38f04c1329304786-2024031885.us-east-1.elb.amazonaws.com:3000"
 $PROMETHEUS_URL = "http://ad9c1032dd1664448adb62cb9cf6b48b-1352347381.us-east-1.elb.amazonaws.com:9090"
 
+Write-Host "📁 REPOSITORIOS DEL PROYECTO:" -ForegroundColor Cyan
+Write-Host "Código:         https://github.com/RaulEdenilson/ai-log-analyzer" -ForegroundColor White
+Write-Host "Infraestructura: https://github.com/RaulEdenilson/ai-log-analyzer-infra" -ForegroundColor White
+Write-Host ""
 Write-Host "🌐 URLS DEL PROYECTO:" -ForegroundColor Cyan
 Write-Host "API:        $API_URL" -ForegroundColor White
 Write-Host "Grafana:    $GRAFANA_URL (admin/admin123)" -ForegroundColor White

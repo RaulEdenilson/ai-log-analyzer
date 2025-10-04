@@ -1,10 +1,12 @@
 # 🎓 AI Log Analyzer - Presentación Final Bootcamp
 
 ## 👨‍💻 Información del Proyecto
-- **Estudiante**: [Tu Nombre]
+- **Estudiante**: Raúl Edenilson
 - **Proyecto**: AI Log Analyzer - Sistema de Análisis de Logs con Detección de Anomalías
 - **Fecha**: Octubre 2025
-- **Repositorio**: https://github.com/[tu-usuario]/ai-log-analyzer
+- **Repositorios**:
+  - **Código**: https://github.com/RaulEdenilson/ai-log-analyzer
+  - **Infraestructura**: https://github.com/RaulEdenilson/ai-log-analyzer-infra
 
 ---
 
@@ -26,8 +28,10 @@ Internet → AWS LoadBalancer → EKS Cluster → Pods
 ## ✅ Cumplimiento de Requisitos Técnicos
 
 ### 1. 🏗️ **Infraestructura como Código**
-- **✅ CUMPLIDO**: Configuración declarativa completa en YAML
-- **Archivos**: `k8s/*.yaml`, `monitoring/*.yaml`
+- **✅ CUMPLIDO**: Separación profesional de infraestructura y código
+- **Repositorio de Infraestructura**: https://github.com/RaulEdenilson/ai-log-analyzer-infra
+- **Repositorio de Aplicación**: https://github.com/RaulEdenilson/ai-log-analyzer
+- **Archivos**: `k8s/*.yaml`, `monitoring/*.yaml`, Terraform/CloudFormation
 - **Componentes**: Deployments, Services, ConfigMaps, Namespaces
 
 ### 2. 🐳 **Contenedorización**
@@ -92,6 +96,16 @@ curl -X POST "http://[API-URL]/upload-log" \
 ---
 
 ## 🛠️ Stack Tecnológico Implementado
+
+### **Arquitectura de Repositorios (Mejores Prácticas)**
+- **🏗️ Infraestructura**: https://github.com/RaulEdenilson/ai-log-analyzer-infra
+  - Terraform/CloudFormation para recursos AWS
+  - Configuración de EKS, VPC, IAM
+  - Separación clara de responsabilidades
+- **💻 Aplicación**: https://github.com/RaulEdenilson/ai-log-analyzer
+  - Código de la aplicación FastAPI
+  - Manifiestos de Kubernetes
+  - Configuración de monitoreo
 
 ### **Backend**
 - **FastAPI**: Framework moderno y rápido
