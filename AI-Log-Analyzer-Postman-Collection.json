@@ -1,0 +1,213 @@
+{
+  "info": {
+    "name": "AI Log Analyzer - Demo Bootcamp",
+    "description": "Colección completa para demostrar la funcionalidad de la API AI Log Analyzer desplegada en EKS",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://a709cebde35644ceca5557ed71f2f964-3a7026267f48c6dd.elb.us-east-1.amazonaws.com",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": ["{{base_url}}"],
+          "path": ["health"]
+        },
+        "description": "Verifica que la API esté funcionando correctamente"
+      },
+      "response": []
+    },
+    {
+      "name": "2. Métricas Prometheus",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/metrics",
+          "host": ["{{base_url}}"],
+          "path": ["metrics"]
+        },
+        "description": "Obtiene las métricas de Prometheus de la aplicación"
+      },
+      "response": []
+    },
+    {
+      "name": "3. Upload Log Simple (INFO)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "[\n  {\n    \"level\": \"INFO\",\n    \"message\": \"Usuario logueado exitosamente\",\n    \"latency_ms\": 120,\n    \"source\": \"auth-service\"\n  }\n]"
+        },
+        "url": {
+          "raw": "{{base_url}}/upload-log",
+          "host": ["{{base_url}}"],
+          "path": ["upload-log"]
+        },
+        "description": "Envía un log normal de tipo INFO"
+      },
+      "response": []
+    },
+    {
+      "name": "4. Upload Log Batch (Múltiples)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "[\n  {\n    \"level\": \"INFO\",\n    \"message\": \"Request procesado correctamente\",\n    \"latency_ms\": 150,\n    \"source\": \"web-service\"\n  },\n  {\n    \"level\": \"DEBUG\",\n    \"message\": \"Cache hit para usuario 12345\",\n    \"latency_ms\": 45,\n    \"source\": \"cache-service\"\n  },\n  {\n    \"level\": \"WARN\",\n    \"message\": \"Uso de memoria alto detectado\",\n    \"latency_ms\": 200,\n    \"source\": \"monitoring-service\"\n  }\n]"
+        },
+        "url": {
+          "raw": "{{base_url}}/upload-log",
+          "host": ["{{base_url}}"],
+          "path": ["upload-log"]
+        },
+        "description": "Envía múltiples logs de diferentes niveles"
+      },
+      "response": []
+    },
+    {
+      "name": "5. Upload Log ANOMALÍA (ERROR)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "[\n  {\n    \"level\": \"ERROR\",\n    \"message\": \"Database connection failed with timeout exception\",\n    \"latency_ms\": 5000,\n    \"source\": \"database-service\"\n  }\n]"
+        },
+        "url": {
+          "raw": "{{base_url}}/upload-log",
+          "host": ["{{base_url}}"],
+          "path": ["upload-log"]
+        },
+        "description": "Envía un log que debería ser detectado como anomalía (ERROR + alta latencia + patrón de error)"
+      },
+      "response": []
+    },
+    {
+      "name": "6. Upload Log ANOMALÍA (CRITICAL)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "[\n  {\n    \"level\": \"CRITICAL\",\n    \"message\": \"System failure - Service unreachable\",\n    \"latency_ms\": 8000,\n    \"source\": \"critical-service\"\n  }\n]"
+        },
+        "url": {
+          "raw": "{{base_url}}/upload-log",
+          "host": ["{{base_url}}"],
+          "path": ["upload-log"]
+        },
+        "description": "Envía un log crítico que definitivamente será una anomalía"
+      },
+      "response": []
+    },
+    {
+      "name": "7. Upload Logs Simulación Real",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "[\n  {\n    \"level\": \"INFO\",\n    \"message\": \"GET /api/users - 200 OK\",\n    \"latency_ms\": 89,\n    \"source\": \"api-gateway\"\n  },\n  {\n    \"level\": \"INFO\",\n    \"message\": \"POST /api/orders - 201 Created\",\n    \"latency_ms\": 156,\n    \"source\": \"api-gateway\"\n  },\n  {\n    \"level\": \"ERROR\",\n    \"message\": \"HTTP 500 internal server error - Traceback in payment service\",\n    \"latency_ms\": 3500,\n    \"source\": \"payment-service\"\n  },\n  {\n    \"level\": \"WARN\",\n    \"message\": \"Connection refused by upstream database\",\n    \"latency_ms\": 2000,\n    \"source\": \"order-service\"\n  },\n  {\n    \"level\": \"DEBUG\",\n    \"message\": \"Cache miss for product ID 789\",\n    \"latency_ms\": 25,\n    \"source\": \"product-service\"\n  }\n]"
+        },
+        "url": {
+          "raw": "{{base_url}}/upload-log",
+          "host": ["{{base_url}}"],
+          "path": ["upload-log"]
+        },
+        "description": "Simula logs reales de una aplicación e-commerce con mezcla de logs normales y anómalos"
+      },
+      "response": []
+    },
+    {
+      "name": "8. Consultar Anomalías (Todas)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/anomalies",
+          "host": ["{{base_url}}"],
+          "path": ["anomalies"]
+        },
+        "description": "Obtiene todas las anomalías detectadas (máximo 20 por defecto)"
+      },
+      "response": []
+    },
+    {
+      "name": "9. Consultar Anomalías (Últimas 5)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/anomalies?limit=5",
+          "host": ["{{base_url}}"],
+          "path": ["anomalies"],
+          "query": [
+            {
+              "key": "limit",
+              "value": "5"
+            }
+          ]
+        },
+        "description": "Obtiene las últimas 5 anomalías detectadas"
+      },
+      "response": []
+    },
+    {
+      "name": "10. Consultar Anomalías (Últimas 50)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/anomalies?limit=50",
+          "host": ["{{base_url}}"],
+          "path": ["anomalies"],
+          "query": [
+            {
+              "key": "limit",
+              "value": "50"
+            }
+          ]
+        },
+        "description": "Obtiene hasta 50 anomalías detectadas"
+      },
+      "response": []
+    }
+  ]
+}

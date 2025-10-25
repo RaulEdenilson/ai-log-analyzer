@@ -84,4 +84,4 @@ jobs:
       - name: Verify deployment
         run: |
           kubectl get pods -n ai-logs
-          kubectl get svc -n ai-logs
+          kubectl get svc -n ai-log
