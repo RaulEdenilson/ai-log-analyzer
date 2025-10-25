@@ -40,8 +40,25 @@ def from_json_payload(payload: dict | list) -> List[schemas.LogIn]:
       - un objeto único
       - {"items": [...]}
     """
+    print(f"DEBUG Parser: Input payload: {payload}")
+    print(f"DEBUG Parser: Payload type: {type(payload)}")
+    
     if isinstance(payload, list):
-        return [schemas.LogIn(**_coerce_log_dict(d)) for d in payload if isinstance(d, dict)]
+        print(f"DEBUG Parser: Processing as list, length: {len(payload)}")
+        result = []
+        for i, d in enumerate(payload):
+            print(f"DEBUG Parser: Item {i}: {d}, type: {type(d)}")
+            if isinstance(d, dict):
+                try:
+                    coerced = _coerce_log_dict(d)
+                    print(f"DEBUG Parser: Coerced item {i}: {coerced}")
+                    log_in = schemas.LogIn(**coerced)
+                    print(f"DEBUG Parser: Created LogIn {i}: {log_in}")
+                    result.append(log_in)
+                except Exception as e:
+                    print(f"DEBUG Parser: Error processing item {i}: {e}")
+        print(f"DEBUG Parser: Final result: {result}")
+        return result
     if isinstance(payload, dict):
         if isinstance(payload.get("items"), list):
             return [schemas.LogIn(**_coerce_log_dict(d)) for d in payload["items"] if isinstance(d, dict)]

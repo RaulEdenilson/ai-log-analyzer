@@ -57,7 +57,19 @@ def upload_log_json(
     Ingesta vía JSON (single o batch).
     Devuelve la lista de logs normalizados con flags de anomalía (LogOut).
     """
-    return IngestService(db).process_payload(payload)
+    print(f"DEBUG: Received payload: {payload}")
+    print(f"DEBUG: Payload type: {type(payload)}")
+    
+    try:
+        result = IngestService(db).process_payload(payload)
+        print(f"DEBUG: Result: {result}")
+        print(f"DEBUG: Result length: {len(result) if result else 0}")
+        return result
+    except Exception as e:
+        print(f"DEBUG: Exception occurred: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
 
 # =====================
 # Ingesta archivo (.jsonl / .log)

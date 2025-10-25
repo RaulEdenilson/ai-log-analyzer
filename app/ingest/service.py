@@ -23,8 +23,13 @@ class IngestService:
 
     # -------- JSON (payload directo del endpoint) --------
     def process_payload(self, payload: dict | list) -> List[schemas.LogOut]:
+        print(f"DEBUG IngestService: Processing payload: {payload}")
         items = from_json_payload(payload)
-        return self._process_items(items)
+        print(f"DEBUG IngestService: Parsed items: {items}")
+        print(f"DEBUG IngestService: Items count: {len(items)}")
+        result = self._process_items(items)
+        print(f"DEBUG IngestService: Final result: {result}")
+        return result
 
     # -------- Archivos (.jsonl / .log) --------
     async def process_file(self, file: UploadFile) -> List[schemas.LogOut]:
