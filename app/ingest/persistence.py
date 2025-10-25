@@ -20,6 +20,7 @@ def persist_log_and_anomalies(
         level=(item.level or "INFO").upper(),
         message=item.message,
         latency_ms=int(item.latency_ms or 0),
+        source=item.source or "unknown",
         is_anomaly=bool(is_anom),
         score=float(score),
     )

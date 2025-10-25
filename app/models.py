@@ -12,6 +12,7 @@ class LogEntry(Base):
     level = Column(String(20), default="INFO", index=True)
     message = Column(Text, nullable=False)
     latency_ms = Column(Integer, default=0)
+    source = Column(String(100), default="unknown", index=True)
     is_anomaly = Column(Boolean, default=False, index=True)
     score = Column(Float, default=0.0)
 

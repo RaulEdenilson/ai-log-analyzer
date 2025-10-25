@@ -61,9 +61,10 @@ class IngestService:
                     level=row.level,
                     message=row.message,
                     latency_ms=row.latency_ms,
-                    is_anomaly=row.is_anomaly,
-                    score=row.score,
-                    reasons=reasons,
+                    source=row.source,
+                    is_anomalous=row.is_anomaly,
+                    anomaly_score=row.score,
+                    anomaly_reasons=reasons,
                 )
             )
 

@@ -8,6 +8,7 @@ class LogIn(BaseModel):
     level: Optional[str] = Field(default="INFO", examples=["INFO", "WARN", "ERROR", "CRITICAL"])
     message: str
     latency_ms: Optional[int] = 0
+    source: Optional[str] = "unknown"
 
 class LogOut(BaseModel):
     id: int
@@ -15,9 +16,10 @@ class LogOut(BaseModel):
     level: str
     message: str
     latency_ms: int
-    is_anomaly: bool
-    score: float
-    reasons: List[str] = []
+    source: Optional[str] = "unknown"
+    is_anomalous: bool
+    anomaly_score: float
+    anomaly_reasons: List[str] = []
 
     class Config:
         from_attributes = True  # pydantic v2: permite construir desde ORM
