@@ -11,10 +11,6 @@ def persist_log_and_anomalies(
     score: float,
     reasons: List[str],
 ) -> models.LogEntry:
-    """
-    Persiste un log con su score/anomalía y retorna la fila (con id).
-    No hace commit; el commit lo hace quien orquesta (service).
-    """
     row = models.LogEntry(
         ts=item.ts,
         level=(item.level or "INFO").upper(),
@@ -25,11 +21,11 @@ def persist_log_and_anomalies(
         score=float(score),
     )
     db.add(row)
-    db.flush()  # asegura row.id
+    db.flush()
 
-    if is_anom:
-        for r in (reasons or ["anomaly"]):
-            db.add(models.Anomaly(log_id=row.id, reason=r, score=float(score)))
+    if is_anom and reasons:
+        combined_reason = ", ".join(reasons)
+        db.add(models.Anomaly(log_id=row.id, reason=combined_reason, score=float(score)))
 
     return row
 
@@ -39,10 +35,6 @@ def persist_many(
     items: List[schemas.LogIn],
     anomalies_info: List[tuple[bool, float, List[str]]],
 ) -> List[models.LogEntry]:
-    """
-    Opción batch: recibe items y la lista paralela (is_anom, score, reasons).
-    No hace commit.
-    """
     rows: List[models.LogEntry] = []
     for it, (is_anom, score, reasons) in zip(items, anomalies_info):
         rows.append(persist_log_and_anomalies(db, it, is_anom, score, reasons))
