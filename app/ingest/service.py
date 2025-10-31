@@ -42,9 +42,12 @@ class IngestService:
 
     # ---------------- CORE ----------------
     def _process_items(self, items: List[schemas.LogIn]) -> List[schemas.LogOut]:
+        print(f"DEBUG _process_items: Processing {len(items)} items")
         out: List[schemas.LogOut] = []
 
-        for it in items:
+        for i, it in enumerate(items):
+            print(f"DEBUG _process_items: Processing item {i}: {it}")
+            
             # métricas base
             lm = int(it.latency_ms or 0)
             latency_hist.observe(float(lm))
@@ -52,27 +55,32 @@ class IngestService:
 
             # score + razones (usa tu detector internamente)
             is_anom, score, reasons = compute_score(it.level, it.message, lm)
+            print(f"DEBUG _process_items: Item {i} - is_anom: {is_anom}, score: {score}, reasons: {reasons}")
 
             # persistencia
             row = persist_log_and_anomalies(self.db, it, is_anom, score, reasons)
+            print(f"DEBUG _process_items: Item {i} - persisted with id: {row.id}")
+            
             if is_anom:
                 anomalies_detected.inc()
 
             # respuesta
-            out.append(
-                schemas.LogOut(
-                    id=row.id,
-                    ts=row.ts,
-                    level=row.level,
-                    message=row.message,
-                    latency_ms=row.latency_ms,
-                    source=row.source,
-                    is_anomalous=row.is_anomaly,
-                    anomaly_score=row.score,
-                    anomaly_reasons=reasons,
-                )
+            log_out = schemas.LogOut(
+                id=row.id,
+                ts=row.ts,
+                level=row.level,
+                message=row.message,
+                latency_ms=row.latency_ms,
+                source=row.source,
+                is_anomalous=row.is_anomaly,
+                anomaly_score=row.score,
+                anomaly_reasons=reasons,
             )
+            print(f"DEBUG _process_items: Item {i} - created LogOut: {log_out}")
+            out.append(log_out)
 
         # commit del batch completo
+        print(f"DEBUG _process_items: Committing {len(out)} items")
         self.db.commit()
+        print(f"DEBUG _process_items: Final output: {out}")
         return out

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from time import perf_counter
-from typing import List
+from typing import List, Any
 
 from fastapi import FastAPI, Body, UploadFile, File, Query, Depends
 from fastapi.responses import PlainTextResponse
@@ -13,13 +13,10 @@ from sqlalchemy.orm import Session
 
 from app.database import Base, engine, get_db
 from app import schemas, models
-from app.ingest import IngestService  # <- NUEVO: orquestador modular (parsers+scoring+persistence)
+from app.ingest import IngestService
 
 app = FastAPI(title="AI Log Analyzer", version="0.4.0")
 
-# =====================
-# Métricas HTTP
-# =====================
 REQ_COUNTER = Counter("http_requests_total", "Total de requests", ["method", "path", "status"])
 REQ_LATENCY = Histogram("http_request_duration_seconds", "Latencia por request", ["method", "path"])
 
@@ -38,73 +35,101 @@ async def metrics_middleware(request, call_next):
         REQ_LATENCY.labels(method=method, path=path).observe(duration)
         REQ_COUNTER.labels(method=method, path=path, status=str(status)).inc()
 
-# Crear tablas (SQLite) al levantar
 Base.metadata.create_all(bind=engine)
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
-# =====================
-# Ingesta JSON
-# =====================
+@app.post("/debug-upload")
+def debug_upload(request: Any = Body(...)):
+    return {
+        "received_type": str(type(request)),
+        "received_data": str(request),
+        "is_list": isinstance(request, list),
+        "is_dict": isinstance(request, dict),
+        "length": len(request) if hasattr(request, '__len__') else "N/A",
+        "first_item_type": str(type(request[0])) if isinstance(request, list) and len(request) > 0 else "N/A"
+    }
+
 @app.post("/upload-log", response_model=List[schemas.LogOut])
 def upload_log_json(
-    payload: list[schemas.LogIn] | dict = Body(...),
+    payload: Any = Body(...),
     db: Session = Depends(get_db),
 ):
-    """
-    Ingesta vía JSON (single o batch).
-    Devuelve la lista de logs normalizados con flags de anomalía (LogOut).
-    """
-    print(f"DEBUG: Received payload: {payload}")
-    print(f"DEBUG: Payload type: {type(payload)}")
-    
     try:
-        result = IngestService(db).process_payload(payload)
-        print(f"DEBUG: Result: {result}")
-        print(f"DEBUG: Result length: {len(result) if result else 0}")
+        print(f"DEBUG ENDPOINT: Received payload type: {type(payload)}")
+        print(f"DEBUG ENDPOINT: Payload content: {payload}")
+        
+        items = []
+        
+        if isinstance(payload, list):
+            print(f"DEBUG ENDPOINT: Processing list with {len(payload)} items")
+            for idx, item in enumerate(payload):
+                try:
+                    if isinstance(item, dict):
+                        log_in = schemas.LogIn(
+                            ts=item.get('ts'),
+                            level=item.get('level', 'INFO'),
+                            message=item.get('message', ''),
+                            latency_ms=item.get('latency_ms', 0),
+                            source=item.get('source', 'unknown')
+                        )
+                        items.append(log_in)
+                        print(f"DEBUG ENDPOINT: Successfully processed item {idx}")
+                    else:
+                        print(f"DEBUG ENDPOINT: Skipping non-dict item {idx}")
+                except Exception as e:
+                    print(f"ERROR ENDPOINT: Failed to process item {idx}: {e}")
+                    continue
+                    
+        elif isinstance(payload, dict):
+            print(f"DEBUG ENDPOINT: Processing single dict")
+            log_in = schemas.LogIn(
+                ts=payload.get('ts'),
+                level=payload.get('level', 'INFO'),
+                message=payload.get('message', ''),
+                latency_ms=payload.get('latency_ms', 0),
+                source=payload.get('source', 'unknown')
+            )
+            items.append(log_in)
+        
+        if not items:
+            print("WARNING ENDPOINT: No items to process after parsing")
+            return []
+        
+        print(f"DEBUG ENDPOINT: Processing {len(items)} items through service")
+        service = IngestService(db)
+        result = service._process_items(items)
+        
+        print(f"DEBUG ENDPOINT: Returning {len(result)} results")
         return result
+        
     except Exception as e:
-        print(f"DEBUG: Exception occurred: {e}")
+        print(f"ERROR ENDPOINT: Exception occurred: {e}")
         import traceback
         traceback.print_exc()
-        raise
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail=f"Error processing payload: {str(e)}")
 
-# =====================
-# Ingesta archivo (.jsonl / .log)
-# =====================
 @app.post("/upload-log-file", response_model=List[schemas.LogOut])
 async def upload_log_file(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
-    """
-    Ingesta vía archivo .log o .jsonl (multipart/form-data, key: file).
-    """
     return await IngestService(db).process_file(file)
 
-# =====================
-# Métricas Prometheus
-# =====================
 @app.get("/metrics")
 def metrics():
     data = generate_latest(REGISTRY)
     return PlainTextResponse(content=data.decode("utf-8"), media_type=CONTENT_TYPE_LATEST)
 
-# =====================
-# Anomalías desde DB
-# =====================
 @app.get("/anomalies")
 def get_anomalies(
     limit: int = Query(20, ge=1, le=500),
     db: Session = Depends(get_db),
 ):
-    """
-    Lista las últimas N anomalías consultando la base de datos (no memoria).
-    """
     try:
-        # Verificar si las tablas existen
         anomalies = db.query(models.Anomaly).limit(limit).all()
         
         result = []
@@ -130,13 +155,8 @@ def get_anomalies(
     except Exception as e:
         return {"error": str(e), "anomalies": [], "count": 0}
 
-# =====================
-# (Opcional) Tick IF/ventanas
-# =====================
-# Si tienes una clase detector con step()/last_anomalies(), deja este endpoint;
-# si no, puedes eliminarlo sin afectar el resto.
 try:
-    from app.services.anomaly import detector  # si ya lo tenías
+    from app.services.anomaly import detector
     @app.post("/tick")
     def tick():
         wf, score, is_anom = detector.step()
@@ -153,6 +173,4 @@ try:
             "is_anomalous": is_anom,
         }
 except Exception:
-    # No hay detector de ventanas: endpoint omitido
     pass
-
